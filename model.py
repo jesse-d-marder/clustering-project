@@ -38,6 +38,7 @@ def add_features(train, validate, test):
         dataset['structure_value_bin'] = pd.qcut(dataset["structure_dollar_per_sqft"], 4, labels=["low","medium","high","very_high"])
         dataset['land_value_bin'] = pd.qcut(dataset["land_dollar_per_sqft"], 4, labels=["low","medium","high","very_high"])
         dataset['has_old_heat'] = dataset["heatingorsystemdesc"] == 'Floor/Wall'
+        dataset['is_tax_delinquent'] = np.where(dataset.taxdelinquencyflag=='Y',1,0)
 
     return train, validate, test
 
@@ -65,7 +66,7 @@ def scale_data(train, validate, test, features_to_scale):
 
     return train_scaled, validate_scaled, test_scaled
 
-def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3, alpha = 0.05):
+def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3, alpha = 0.05, plots=True):
     
     X = train_scaled[features_to_cluster]
     
@@ -73,15 +74,16 @@ def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3,
     cluster_name = "_".join([feat[:3] for feat in features_to_cluster])
     cluster_name = cluster_name+"_cluster"
     
-    # plot elbow chart
-    with plt.style.context('seaborn-whitegrid'):
-        plt.figure(figsize=(9, 6))
-        pd.Series({k: KMeans(k, random_state=123).fit(X).inertia_ for k in range(2, 18)}).plot(marker='x')
-        plt.xticks(range(2, 12))
-        plt.xlabel('k')
-        plt.ylabel('inertia')
-        plt.title(f'Change in inertia as k increases for cluster: {cluster_name}')
-        plt.show()
+    if plots:
+        # plot elbow chart
+        with plt.style.context('seaborn-whitegrid'):
+            plt.figure(figsize=(9, 6))
+            pd.Series({k: KMeans(k, random_state=123).fit(X).inertia_ for k in range(2, 18)}).plot(marker='x')
+            plt.xticks(range(2, 12))
+            plt.xlabel('k')
+            plt.ylabel('inertia')
+            plt.title(f'Change in inertia as k increases for cluster: {cluster_name}')
+            plt.show()
         
     kmeans = KMeans(n_clusters=cluster_qty, random_state=123)
     kmeans.fit(X)
@@ -89,10 +91,11 @@ def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3,
     train_scaled[cluster_name] = kmeans.predict(X)
     train_scaled[cluster_name] = train_scaled[cluster_name].astype('category')
     
-    sns.barplot(data = train_scaled, x = cluster_name, y='abs_logerror')
-    plt.title(f"Mean Absolute Log Error by Cluster for cluster: {cluster_name}")
-    plt.ylabel("Mean Absolute Log Error", fontsize=16)
-    plt.xlabel("Cluster", fontsize=16)
+    if plots:
+        sns.barplot(data = train_scaled, x = cluster_name, y='abs_logerror')
+        plt.title(f"Mean Absolute Log Error by Cluster for cluster: {cluster_name}")
+        plt.ylabel("Mean Absolute Log Error", fontsize=16)
+        plt.xlabel("Cluster", fontsize=16)
     
     # Run significance test (t-test)
     overall_mean = train_scaled.abs_logerror.mean()
@@ -100,7 +103,8 @@ def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3,
     for col in set(train_scaled[cluster_name]):
         sample = train_scaled[train_scaled[cluster_name]==col]
         t, p = stats.ttest_1samp(sample.abs_logerror, overall_mean)
-        print(col, "Significant? ", p<alpha, "t value: ", t)
+        if plots:
+            print(col, "Significant? ", p<alpha, "t value: ", t)
         
     return train_scaled
 
