@@ -34,6 +34,7 @@ def add_features(train, validate, test):
         # Sometimes num bathrooms is 0 -> set value to avoid inf/NaN creation
         dataset['bed_bath_ratio'] = np.select([dataset["bathroom"]>0,dataset["bathroom"]==0],[dataset["bedroom"]/dataset["bathroom"],0])
         dataset['is_la'] = dataset["county"] == 'Los Angeles County'
+        dataset['is_orange'] = dataset["county"] == 'Orange County'
         dataset['abs_logerror'] = abs(dataset["logerror"])
         dataset['tax_value_bin'] = pd.qcut(dataset["tax_value"], 4, labels=["cheap","medium","high","ultimate_luxury"])
         dataset['lot_size_bin'] = pd.qcut(dataset["lot_size"], 4, labels=["tiny","small","medium","big"])
@@ -124,19 +125,32 @@ def plot_bar_comparison(train_scaled, feature_to_cluster, cluster_title, cluster
     
 
 def data_scaling(train, validate, test, to_dummy, features_to_scale, columns_to_use):
-    """ Performs scaling and feature selection using recursive feature elimination. Performs operations on all three inputed data sets. Requires lists of features to encode (dummy), features to scale, and columns (features) to input to the feature elimination. """
+    """ Performs scaling and creates dummy variables. Performs operations on all three inputed data sets. Requires lists of features to encode (dummy), features to scale, and columns (features) to input to the feature elimination. """
     
-    # Gets dummy variables
-    X_train_exp = pd.get_dummies(train, columns = to_dummy, drop_first=True)
+    # Select only the columns will be using in the model going forward
+    X_train = train[columns_to_use]
+    X_validate = validate[columns_to_use]
+    X_test = test[columns_to_use]
     
-    # Gets dummy variables for validate and test sets as well for later use
-    X_train = X_train_exp[columns_to_use]
-    X_validate = pd.get_dummies(validate, columns = to_dummy, drop_first=True)[columns_to_use]
-    X_test = pd.get_dummies(test, columns = to_dummy, drop_first=True)[columns_to_use]
+    # Get the dummy variables for desired features
+    X_train_dummies = pd.get_dummies(train[to_dummy], drop_first=True)
+    X_validate_dummies = pd.get_dummies(validate[to_dummy], drop_first=True)
+    X_test_dummies = pd.get_dummies(test[to_dummy], drop_first=True)
     
     # Scale train, validate, and test sets using the scale_data function from wrangle.pu
     X_train_scaled, X_validate_scaled, X_test_scaled = scale_data(X_train, X_validate, X_test,features_to_scale)
     
+    # Concatenate dummy variable df onto scaled df
+    X_train_scaled = pd.concat([X_train_scaled, X_train_dummies], axis=1)
+    X_validate_scaled = pd.concat([X_validate_scaled, X_validate_dummies], axis=1)
+    X_test_scaled = pd.concat([X_test_scaled, X_test_dummies], axis=1)
+    
+    # Drop original non scaled columns
+    X_train_scaled = X_train_scaled.drop(columns = features_to_scale)
+    X_validate_scaled = X_validate_scaled.drop(columns = features_to_scale)
+    X_test_scaled = X_test_scaled.drop(columns = features_to_scale)
+
+
     # Set up the dependent variable in a datafrane
     y_train = train[['logerror']]
     y_validate = validate[['logerror']]
@@ -144,26 +158,26 @@ def data_scaling(train, validate, test, to_dummy, features_to_scale, columns_to_
     
     return X_train_scaled, X_validate_scaled, X_test_scaled, y_train, y_validate, y_test
     
-def model_feature_selection(X_train_scaled, y_train, columns_to_use):
+def model_feature_selection(X_train_scaled, y_train, top_n=3):
     """ Performs scaling and feature selection using recursive feature elimination. Performs operations on all three inputed data sets. Requires lists of features to encode (dummy), features to scale, and columns (features) to input to the feature elimination. """
     
     # Perform Feature Selection using Recursive Feature Elimination
     # Initialize ML algorithm
     lm = LinearRegression()
     # create RFE object - selects top 3 features only
-    rfe = RFE(lm, n_features_to_select=3)
+    rfe = RFE(lm, n_features_to_select=top_n)
     # fit the data using RFE
-    rfe.fit(X_train_scaled[columns_to_use], y_train)
+    rfe.fit(X_train_scaled, y_train)
     # get mask of columns selected
     feature_mask = rfe.support_
     # get list of column names
-    rfe_features = X_train_scaled[columns_to_use].iloc[:,feature_mask].columns.tolist()
+    rfe_features = X_train_scaled.iloc[:,feature_mask].columns.tolist()
     # view list of columns and their ranking
 
     # get the ranks
     var_ranks = rfe.ranking_
     # get the variable names
-    var_names = X_train_scaled[columns_to_use].columns.tolist()
+    var_names = X_train_scaled.columns.tolist()
     # combine ranks and names into a df for clean viewing
     rfe_ranks_df = pd.DataFrame({'Var': var_names, 'Rank': var_ranks})
     # sort the df by rank
@@ -178,7 +192,12 @@ def model(X_train_scaled, X_validate_scaled, X_test_scaled, y_train, y_validate,
     y_validate['log_error'] = y_validate['logerror']
     y_test['log_error'] = y_test['logerror']
 
-
+    # Just using rfe features
+    X_train_scaled = X_train_scaled[rfe_features]
+    X_validate_scaled = X_validate_scaled[rfe_features]
+    X_test_scaled = X_test_scaled[rfe_features]
+    
+    print(f"Using {X_train_scaled.columns}")
     ### BASELINE
     
     # 1. Predict log_error_pred_mean
@@ -270,40 +289,40 @@ def model(X_train_scaled, X_validate_scaled, X_test_scaled, y_train, y_validate,
         y_test['log_error_pred_lars'] = lars.predict(X_test_scaled)
         rmse_test = mean_squared_error(y_test.log_error, y_test.log_error_pred_lars)**(1/2)
 
-#     # Tweedie
+    # Tweedie
     
-#     # create the model object
-#     glm = TweedieRegressor(power=1, alpha=0)
+    # create the model object
+    glm = TweedieRegressor(power=0, alpha=0)
 
-#     # fit the model to our training data. We must specify the column in y_train, 
-#     # since we have converted it to a dataframe from a series! 
-#     glm.fit(X_train_scaled, y_train.log_error)
+    # fit the model to our training data. We must specify the column in y_train, 
+    # since we have converted it to a dataframe from a series! 
+    glm.fit(X_train_scaled, y_train.log_error)
 
-#     # predict train
-#     y_train['log_error_pred_glm'] = glm.predict(X_train_scaled)
+    # predict train
+    y_train['log_error_pred_glm'] = glm.predict(X_train_scaled)
 
-#     # evaluate: rmse
-#     rmse_train = mean_squared_error(y_train.log_error, y_train.log_error_pred_glm)**(1/2)
+    # evaluate: rmse
+    rmse_train = mean_squared_error(y_train.log_error, y_train.log_error_pred_glm)**(1/2)
 
-#     # predict validate
-#     y_validate['log_error_pred_glm'] = glm.predict(X_validate_scaled)
+    # predict validate
+    y_validate['log_error_pred_glm'] = glm.predict(X_validate_scaled)
 
-#     # evaluate: rmse
-#     rmse_validate = mean_squared_error(y_validate.log_error, y_validate.log_error_pred_glm)**(1/2)
+    # evaluate: rmse
+    rmse_validate = mean_squared_error(y_validate.log_error, y_validate.log_error_pred_glm)**(1/2)
     
-#     if print_results:
-#         print("RMSE for GLM using Tweedie, power=1 & alpha=0\nTraining/In-Sample: ", rmse_train, 
-#           "\nValidation/Out-of-Sample: ", rmse_validate)
+    if print_results:
+        print("RMSE for GLM using Tweedie, power=0 & alpha=0\nTraining/In-Sample: ", rmse_train, 
+          "\nValidation/Out-of-Sample: ", rmse_validate)
         
-#     # predict test
-#     if show_test:
+    # predict test
+    if show_test:
         
-#         y_test['log_error_pred_glm'] = glm.predict(X_test_scaled)
-#         rmse_test = mean_squared_error(y_test.log_error, y_test.log_error_pred_glm)**(1/2)
+        y_test['log_error_pred_glm'] = glm.predict(X_test_scaled)
+        rmse_test = mean_squared_error(y_test.log_error, y_test.log_error_pred_glm)**(1/2)
 
     # Polynomial features
     # make the polynomial features to get a new set of features
-    pf = PolynomialFeatures(degree=2,interaction_only=True)
+    pf = PolynomialFeatures(degree=2,interaction_only=False)
 
     # fit and transform X_train_scaled
     X_train_degree2 = pf.fit_transform(X_train_scaled)
@@ -342,11 +361,16 @@ def model(X_train_scaled, X_validate_scaled, X_test_scaled, y_train, y_validate,
         rmse_test = mean_squared_error(y_test.log_error, y_test.log_error_pred_lm2)**(1/2)
 
     results = pd.concat([
-    y_validate.apply(lambda col: r2_score(y_validate.log_error, col)).rename('r2'),
-    y_validate.apply(lambda col: mean_squared_error(y_validate.log_error, col)).rename('mse'),
-    ], axis=1).assign(
-        rmse=lambda df: df.mse.apply(lambda x: x**0.5)
-    )
+        y_train.apply(lambda col: r2_score(y_train.log_error, col)).rename('r2_train'),
+        y_train.apply(lambda col: mean_squared_error(y_train.log_error, col)).rename('mse_train'),
+        y_validate.apply(lambda col: r2_score(y_validate.log_error, col)).rename('r2_validate'),
+        y_validate.apply(lambda col: mean_squared_error(y_validate.log_error, col)).rename('mse_validate')
+        ], axis=1).assign(
+            rmse_validate=lambda df: df.mse_validate.apply(lambda x: x**0.5)
+        )
+        
+    results = results.assign(rmse_train= lambda results: results.mse_train.apply(lambda x: x**0.5))
+
     if show_test:
         results = pd.concat([
         y_train.apply(lambda col: r2_score(y_train.log_error, col)).rename('r2_train'),
@@ -361,5 +385,6 @@ def model(X_train_scaled, X_validate_scaled, X_test_scaled, y_train, y_validate,
         
         results = results.assign(rmse_train= lambda results: results.mse_train.apply(lambda x: x**0.5))
         results = results.assign(rmse_test= lambda results: results.mse_test.apply(lambda x: x**0.5))
+    
     return results
 
