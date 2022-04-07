@@ -73,9 +73,11 @@ def scale_data(train, validate, test, features_to_scale):
 
     return train_scaled, validate_scaled, test_scaled
 
-def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3, alpha = 0.05, plots=True):
+def perform_cluster_analysis(train_scaled, validate_scaled, test_scaled, features_to_cluster, cluster_qty = 3, alpha = 0.05, plots=True):
     
     X = train_scaled[features_to_cluster]
+    X_validate = validate_scaled[features_to_cluster]
+    X_test = test_scaled[features_to_cluster]
     
     # Name the cluster so different clusters can be compared in same dataframe
     cluster_name = "_".join([feat[:3] for feat in features_to_cluster])
@@ -98,6 +100,13 @@ def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3,
     train_scaled[cluster_name] = kmeans.predict(X)
     train_scaled[cluster_name] = train_scaled[cluster_name].astype('category')
     
+    validate_scaled[cluster_name] = kmeans.predict(X_validate)
+    validate_scaled[cluster_name] = validate_scaled[cluster_name].astype('category')
+
+    test_scaled[cluster_name] = kmeans.predict(X_test)
+    test_scaled[cluster_name] = test_scaled[cluster_name].astype('category')
+
+
     if plots:
         sns.barplot(data = train_scaled, x = cluster_name, y='abs_logerror')
         plt.title(f"Mean Absolute Log Error by Cluster for cluster: {cluster_name}")
@@ -113,7 +122,7 @@ def perform_cluster_analysis(train_scaled, features_to_cluster, cluster_qty = 3,
         if plots:
             print(col, "Significant? ", p<alpha, "t value: ", t)
         
-    return train_scaled
+    return train_scaled, validate_scaled, test_scaled
 
 def plot_bar_comparison(train_scaled, feature_to_cluster, cluster_title, cluster_names):
     
