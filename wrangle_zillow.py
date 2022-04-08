@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import sklearn.preprocessing
 
 def wrangle_zillow():
-    """ Acquires the Zillow housing data from the SQL database or a cached CSV file. Renames columns and outputs data as a Pandas DataFrame"""
+    """ Acquires the Zillow housing data from the SQL database or a cached CSV file. Renames columns, checks data types and outputs data as a Pandas DataFrame"""
     # Acquire data from CSV if exists
     if os.path.exists('zillow_2017.csv'):
         print("Using cached data")
