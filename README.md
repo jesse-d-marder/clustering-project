@@ -64,14 +64,11 @@ The goal of this project was to identify factors affecting errors in the Zestima
 | delinquent_years  |  years delinquent   |
 
 
-
-
-
 ### Project Plan
 
 For this project I followed the data science pipeline:
 
-Planning: I established the goals for this project and the relevant questions I wanted to answer.
+Planning: I established the goals for this project and the relevant questions I wanted to answer. I used the results from my exploration to guide completion of this project. I followed similar steps as previous projects and used the Trello board from the Zillow regression project as a guide.
 
 Acquire: The data for this project is from a SQL Database called 'zillow' located on a cloud server. The wrangle.py script is used to query the database for the required data tables and returns the data in a Pandas DataFrame. This script also saves the DataFrame to a .csv file for faster subsequent loads. The script will check if the zillow_2017.csv file exists in the current directory and if so will load it into memory, skipping the SQL query.
 
@@ -90,7 +87,7 @@ Delivery: This is in the form of this github repository as well as a presentatio
 3. Libraries used are pandas, matplotlib, scipy, sklearn, seaborn, and numpy.
 4. You should be able to run improve_zillow.ipynb.
 
-### Key Findings and Recommendations
+### Key Findings 
 
 - Size, age, tax value and tax delinquency have the greatest effect on absolute log error.
 - Older, smaller, and cheaper (tax value) homes have greater than average absolute error. Medium size and age homes have slightly lower average error. 
@@ -99,7 +96,7 @@ Delivery: This is in the form of this github repository as well as a presentatio
 - Tax calues and bathroom counts on both high and low ends of the range result in higher log errors. Tax delinquency has a strong effect on log error as originally shown via t-test results.
 - Several regression models were trained and evaluated to attempt to predict log errors for single family properties. Improvements of 2.75% over baseline were achieved using an Ordinary Least Squares model. Still r2 and RMSE values were poor enough that additional feature engineering or data collection may be required to improve performance. 
 
-### Conclusion
+### Conclusion and Recommendations
 - Based on the key findings demonstrated in this project the Zestimate needs to be improved for homes with the following factors:
     - small size
     - low tax value

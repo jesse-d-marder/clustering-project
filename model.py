@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 
 
 def add_features(train, validate, test):
-    
+    """ Adds features to each dataset. Done with split data to ensure proper quartiles/terciles used for binned. Returns pandas dataframe with additional features. """
     datasets = [train, validate, test]
     
     for dataset in datasets:
@@ -83,18 +83,22 @@ def perform_categorical_t_tests(train, alpha = 0.05):
     option_sample_size=[]
 
     # print(f"Overall mean logerror: {overall_mean}")
+    # Iterate through each column in train
     for col in train.columns:
+        # Define a categorical column as one with < 10 values
         if train[col].nunique()<10:
+            # For each class within the category, iterate through and perform t test
             for option in train[col].unique():
                 if len(train[train[col]==option].abs_logerror)>2:
                     t, p = stats.ttest_1samp(train[train[col]==option].abs_logerror, train.abs_logerror.mean())
+                    # test if significant
                     if p<alpha:
                         sample_mean = train[train[col]==option].abs_logerror.mean()
                         difference = sample_mean - overall_mean
                         sample_size = len(train[train[col]==option].abs_logerror)
                         # print(f"For {col} - {option} the mean ({sample_mean:.4f}) differs significantly from overall mean by {difference:.4f}, sample size {len(train[train[col]==option].logerror)}")
 
-                        # Only saving those values with greater than average absolute log errors and decent sampel
+                        # Only saving those values with greater than average absolute log errors and decent sample size
                         if (difference>0) and (sample_size>100):
                             high_cols.append(col)
                             high_option.append(option)
@@ -471,17 +475,22 @@ def rename_cluster_1(data_set):
     
     not_ranked = data_set.groupby('age_squ_tax_has_cluster').mean()[['age','square_feet','tax_value','has_old_heat']]
     grouped_rank = data_set.groupby('age_squ_tax_has_cluster').mean()[['age','square_feet','tax_value','has_old_heat']].rank()
+    # Rename columns
     grouped_rank.columns = [col+"_rank" for col in grouped_rank]
     cluster_rankings = pd.concat([not_ranked, grouped_rank], axis=1)
+    # Remap names of values in rows
     cluster_rankings["age_name"] = cluster_rankings.age_rank.map({1.0:"New",2.0:"Med_age",3.0:"Old"})
     cluster_rankings["size_name"] = cluster_rankings.square_feet_rank.map({1.0:"Small",2.0:"Medium",3.0:"Big"})
     cluster_rankings["value_name"] = cluster_rankings.tax_value_rank.map({1.0:"Cheap",2.0:"Mid_price",3.0:"Expensive"})
     cluster_rankings["heat_name"] = cluster_rankings.has_old_heat.map({1.0:"old_heat",0.0:"",0.0:""})
+    # Create the cluster name
     cluster_rankings["cluster_name"] = cluster_rankings.age_name+"_"+cluster_rankings.size_name+"_"+cluster_rankings.value_name+"_"+cluster_rankings.heat_name
     
+    # Create the renaming dictionary
     indices = cluster_rankings.index.tolist()
     rename_dict = {i:cluster_rankings.cluster_name[i] for i in indices}
     
+    # Rename values in cluster
     data_set = data_set.replace({'age_squ_tax_has_cluster':rename_dict})
     
     return data_set
@@ -492,15 +501,18 @@ def rename_cluster_2(data_set):
 
     not_ranked = data_set.groupby('str_lan_tax_cluster').mean()[['structure_dollar_per_sqft','land_dollar_per_sqft','taxdelinquencyflag']]
     grouped_rank = data_set.groupby('str_lan_tax_cluster').mean()[['structure_dollar_per_sqft','land_dollar_per_sqft','taxdelinquencyflag']].rank()
+    # Rename columns
     grouped_rank.columns = [col+"_rank" for col in grouped_rank]
     cluster_rankings = pd.concat([not_ranked, grouped_rank], axis=1)
     cluster_rankings["structure_value_per_sqft_name"] = cluster_rankings.structure_dollar_per_sqft_rank.map({1.0:"Low_Value",2.0:"Medium_Value",3.0:"High_value"})
     cluster_rankings["taxdelinquencyflag_name"] = cluster_rankings.taxdelinquencyflag.map({1.0:"delinq",0.0:"not_dl"})
     cluster_rankings["cluster_name"] = cluster_rankings.structure_value_per_sqft_name+"_"+cluster_rankings.taxdelinquencyflag_name
-
+    
+    # Create renaming dictionary
     indices = cluster_rankings.index.tolist()
     rename_dict = {i:cluster_rankings.cluster_name[i] for i in indices}
     
+    # Rename values in cluster
     data_set = data_set.replace({'str_lan_tax_cluster':rename_dict})
     
     return data_set
@@ -515,10 +527,12 @@ def rename_cluster_3(data_set):
     cluster_rankings["full_bath_name"] = cluster_rankings.fullbathcnt_rank.map({1.0:"Low_Baths",2.0:"Med_Baths",3.0:"High_Baths"})
     cluster_rankings["bed_bath_name"] = cluster_rankings.bed_bath_ratio_rank.map({1.0:"Low_BB",2.0:"Med_BB",3.0:"High_BB"})
     cluster_rankings["cluster_name"] = cluster_rankings.full_bath_name+"_"+cluster_rankings.bed_bath_name
-
+    
+    # Create renaming dictionary
     indices = cluster_rankings.index.tolist()
     rename_dict = {i:cluster_rankings.cluster_name[i] for i in indices}
     
+    # Rename values
     data_set = data_set.replace({'ful_bed_cluster':rename_dict})
     
     return data_set
@@ -534,10 +548,12 @@ def rename_cluster_4(data_set):
     cluster_rankings["tax_value_name"] = cluster_rankings.tax_value_rank.map({1.0:"Low_Value",2.0:"Med_Value",3.0:"High_Value",4.0:"Highest_Value"})
     cluster_rankings["tax_delinquent_name"] = cluster_rankings.taxdelinquencyflag.map({1.0:"dq",0.0:"n_dl"})
     cluster_rankings["cluster_name"] = cluster_rankings.bathroom_name+"_"+cluster_rankings.tax_value_name+"_"+cluster_rankings.tax_delinquent_name
-
+    
+    # Create renaming dictionary
     indices = cluster_rankings.index.tolist()
     rename_dict = {i:cluster_rankings.cluster_name[i] for i in indices}
     
+    # Rename values in cluster
     data_set = data_set.replace({'tax_bat_tax_cluster':rename_dict})
     
     return data_set
