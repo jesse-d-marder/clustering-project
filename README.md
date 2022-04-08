@@ -58,7 +58,7 @@ The goal of this project was to identify factors affecting errors in the Zestima
 | abs_logerror   |  absolute value of prediction log error   |
 | tax_value_bin    |  binned tax values     |
 | lot_size_bin    |  binned lot sizes   |
-| structure_value_bin   |  strucutre dollar per sqft binned     |
+| structure_value_bin   |  structure dollar per sqft binned     |
 | land_value_bin   |  land value binned     |
 | taxdelinquencyflag    |  home is delinquent on taxes |
 | delinquent_years  |  years delinquent   |
@@ -93,11 +93,11 @@ Delivery: This is in the form of this github repository as well as a presentatio
 - Older, smaller, and cheaper (tax value) homes have greater than average absolute error. Medium size and age homes have slightly lower average error. 
 - Medium structure and land values with tax delinquency result in higher absolute log errors. Higher and lower structure and land values have lower than average log errors.
 - Few full baths with many bedrooms (High Bed to Bath Ratio) exhibits higher absolute log error
-- Tax calues and bathroom counts on both high and low ends of the range result in higher log errors. Tax delinquency has a strong effect on log error as originally shown via t-test results.
-- Several regression models were trained and evaluated to attempt to predict log errors for single family properties. Improvements of 2.75% over baseline were achieved using an Ordinary Least Squares model. Still r2 and RMSE values were poor enough that additional feature engineering or data collection may be required to improve performance. 
+- Tax values and bathroom counts on both high and low ends of the range result in higher log errors. Tax delinquency has a strong effect on log error as originally shown via t-test results.
+- Several regression models were trained and evaluated to attempt to predict log errors for single family properties. Improvements of 2.5% over baseline were achieved using an Ordinary Least Squares model. Still r2 and RMSE values were poor enough that additional feature engineering or data collection may be required to improve performance. 
 
 ### Conclusion and Recommendations
-- Based on the key findings demonstrated in this project the Zestimate needs to be improved for homes with the following factors:
+- Based on the key findings demonstrated in this project efforts to improve the Zestimate should focus on the following home characteristics:
     - small size
     - low tax value
     - medium structure and land values
