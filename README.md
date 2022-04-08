@@ -76,7 +76,7 @@ Prepare: The wrangle.py script uses the same wrangle_zillow function from the ac
 
 Explore: The questions established in planning were analyzed using statistical tests including correlation and t-tests to confirm hypotheses about the data. This work was completed in the explore_zillow.ipynb file and relevant portions were moved to the improve_zillow.ipynb final deliverable. A visualization illustrating the results of the tests and answering each question is included. 
 
-Model: Four different regression algorithms were investigated to determine if log errors could be predicted using features identified during exploration. A select set of hyperparameters were tested against train and validate data to determine which demonstrated the best performance. The final model was selected and used to make predictions on the withheld test data.
+Model: Four different regression algorithms were investigated to determine if log errors could be predicted using features identified during exploration. A select set of hyperparameters were tested against train and validate data to determine which demonstrated the best performance. The final model was selected based on RMSE score on validate (after checking for overfitting) and used to make predictions on the withheld test data.
 
 Delivery: This is in the form of this github repository as well as a presentation of my final notebook to the stakeholders.
 
