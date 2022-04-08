@@ -37,18 +37,34 @@ The goal of this project was to identify factors affecting errors in the Zestima
 | ----------- | ----------- |
 | bedroom    |  number of bedrooms in home         |
 | bathroom           |  number of bathrooms in home          |
-| bathroom_cat    |  number of bathrooms split into 3 categories     |
-| bedroom_cat   |  number of bedrooms split into 3 categories     |
+| bathroom_bin    |  number of bathrooms split into 3 categories     |
+| bedroom_bin   |  number of bedrooms split into 3 categories     |
 | age    |  age of the home   |
 | square_feet    |  total living area of home    |
 | tax_value           | total tax assessed value of the parcel (target) |
 | fips    |  Federal Information Processing Standard code (location)       |
-| bed_to_bath    |  ratio of bedrooms to bathrooms      |
+| bed_bath_ratio    |  ratio of bedrooms to bathrooms      |
 | living_space   |  square footage - (bathrooms*40 + bedrooms*200)       |
 | room_count    |  sum of bedrooms and bathrooms       |
 | pool    |  whether the home has a pool      |
 | has_garage   |  whether the home has a garage      |
 | condition   |  assessment of the condition of the home, low values are better       |
+| heatingorsystemdesc   |  heating system     |
+| fullbathcnt_bin    |  binned count of full bathrooms     |
+| home_size    |  size of home binned   |
+| tax_rate   |  tax amount/ tax value     |
+| structure_dollar_per_sqft   |  tax value / square footage     |
+| land_dollar_per_sqft   |  land tax value / square footage     |
+| abs_logerror   |  absolute value of prediction log error   |
+| tax_value_bin    |  binned tax values     |
+| lot_size_bin    |  binned lot sizes   |
+| structure_value_bin   |  strucutre dollar per sqft binned     |
+| land_value_bin   |  land value binned     |
+| taxdelinquencyflag    |  home is delinquent on taxes |
+| delinquent_years  |  years delinquent   |
+
+
+
 
 
 ### Project Plan

@@ -120,14 +120,14 @@ def handle_missing_values(df, prop_required_column, prop_required_row):
     Returns a df without the columns and rows that were dropped. """
     
     # Drop columns with pct of missing rows above threshold
-    print("For threshold based dropping: ")
-    print(df.shape, " original shape")
+    # print("For threshold based dropping: ")
+    # print(df.shape, " original shape")
     df = df.dropna(thresh = int((prop_required_row)*len(df)), axis=1, inplace=False)
-    print(df.shape, " shape after dropping columns with prop required rows below theshold")
+    # print(df.shape, " shape after dropping columns with prop required rows below theshold")
     
     # Drop rows with pct of missing columns above threshold
     df = df.dropna(thresh = int(prop_required_column*len(df.columns)), inplace=False)
-    print(df.shape, " shape after dropping rows with prop required columns below threshold")
+    # print(df.shape, " shape after dropping rows with prop required columns below threshold")
     
     return df
 
@@ -219,6 +219,8 @@ def split_data(df, train_size_vs_train_test = 0.8, train_size_vs_train_val = 0.7
     Train: 0.56
     Validate: 0.24
     Test: 0.2"""
+    
+    # Splits into train, validate, and test sets
     train_val, test = train_test_split(df, train_size=train_size_vs_train_test, random_state=123)
     train, validate = train_test_split(train_val, train_size=train_size_vs_train_val, random_state=123)
     
@@ -235,6 +237,7 @@ def split_data(df, train_size_vs_train_test = 0.8, train_size_vs_train_val = 0.7
 def remove_outliers(df, k, col_list):
     ''' Removes outliers based on multiple of IQR. Accepts as arguments the dataframe, the k value for number of IQR to use as threshold, and the list of columns. Outputs a dataframe without the outliers.
     '''
+    # print(f"Shape before removing outliers: {df.shape}")
     # Create a column that will label our rows as containing an outlier value or not
     num_obs = df.shape[0]
     df['outlier'] = False
@@ -252,6 +255,7 @@ def remove_outliers(df, k, col_list):
     
     df = df[df.outlier == False]
     df.drop(columns=['outlier'], inplace=True)
-    print(f"Number of observations removed: {num_obs - df.shape[0]}")
+    # print(f"Number of observations removed: {num_obs - df.shape[0]}")
+    print(f"Final shape after removing outliers {df.shape}")
         
     return df
